@@ -84,6 +84,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        // URL Scheme generado en la UI de MCP
+        resValue "string", "evergage_scheme", "evghpp9e"
     }
     signingConfigs {
         debug {
@@ -110,6 +113,10 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+
+    implementation('com.evergage.android:evergage-android-sdk:1.4.1@aar') {
+        transitive = true
+    }
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

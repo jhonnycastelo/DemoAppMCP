@@ -7,6 +7,13 @@ import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 
+// 👇 Import del paquete nativo que tú creaste
+import com.priceshoesdemo.PersonalizationPackage
+
+// 👇 Imports del SDK de Marketing Cloud Personalization (Evergage)
+import com.evergage.android.Evergage
+import com.evergage.android.ClientConfiguration
+
 class MainApplication : Application(), ReactApplication {
 
   override val reactHost: ReactHost by lazy {
@@ -14,14 +21,31 @@ class MainApplication : Application(), ReactApplication {
       context = applicationContext,
       packageList =
         PackageList(this).packages.apply {
-          // Packages that cannot be autolinked yet can be added manually here, for example:
-          // add(MyReactNativePackage())
+
+          // -------------------------------------------
+          // 👉 Aquí SE AGREGA el paquete manualmente 👇
+          // -------------------------------------------
+          add(PersonalizationPackage())
+
+          // (Este bloque puede tener otros packages también)
         },
     )
   }
 
   override fun onCreate() {
     super.onCreate()
+
+    // 🔹 Inicializar Marketing Cloud Personalization (Evergage)
+    Evergage.initialize(this)
+
+    val config = ClientConfiguration.Builder()
+      .account("partnerfreewaymx")
+      .dataset("demoapp")
+      .build()
+
+    Evergage.getInstance().start(config)
+
+    // 🔹 Inicializar React Native (como ya estaba)
     loadReactNative(this)
   }
 }
