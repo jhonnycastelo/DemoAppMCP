@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -7,11 +7,14 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
-
 import { NativeModules } from 'react-native';
-import { useEffect } from 'react';
+
+import HamburgerButton from './src/components/HamburgerButton';
+import MenuDrawer from './src/components/MenuDrawer';
 
 const { PersonalizationModule } = NativeModules;
+
+type Page = 'home' | 'products';
 
 const PRODUCTS = [
   { id: '1', name: 'Tenis Urbanos Price Shoes', category: 'Calzado', price: '$49.99' },
@@ -19,57 +22,97 @@ const PRODUCTS = [
   { id: '3', name: 'Sandalias Comfort Price Shoes', category: 'Calzado', price: '$39.99' },
 ];
 
-const HomeScreen = () => {
+// ----------- Pantalla Home -----------
+const HomeScreen: React.FC = () => {
   useEffect(() => {
     PersonalizationModule.trackPageView('Home');
   }, []);
 
   return (
-  <View style={styles.screen}>
-    <Text style={styles.title}>Price Shoes Demo</Text>
-    <Text style={styles.subtitle}>Bienvenid@ ✨</Text>
-    <Text style={styles.text}>
-      Esta es una app de prueba construida en React Native para integrar con
-      Salesforce Marketing Cloud Personalization.
-    </Text>
-  </View>
+    <View style={styles.screen}>
+      <Text style={styles.title}>Price Shoes Demo</Text>
+      <Text style={styles.subtitle}>Bienvenid@ ✨</Text>
+      <Text style={styles.text}>
+        Esta es una app de prueba construida en React Native para integrar con
+        Salesforce Marketing Cloud Personalization.
+      </Text>
+    </View>
   );
 };
 
-const ProductsScreen = () => {
+// ----------- Pantalla Productos -----------
+interface ProductsScreenProps {
+  trackViewOnMount: boolean;
+}
+
+const ProductsScreen: React.FC<ProductsScreenProps> = ({ trackViewOnMount }) => {
   useEffect(() => {
-    PersonalizationModule.trackPageView('Products');
-  }, []);
-  return(
-  <View style={styles.screen}>
-    <Text style={styles.title}>Productos destacados</Text>
-    <FlatList
-      data={PRODUCTS}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Text style={styles.cardName}>{item.name}</Text>
-          <Text style={styles.cardCategory}>{item.category}</Text>
-          <Text style={styles.cardPrice}>{item.price}</Text>
-        </View>
-      )}
-    />
-  </View>
-);
+    // 👇 Sólo mandamos view:Products si está habilitado
+    if (trackViewOnMount) {
+      PersonalizationModule.trackPageView('Products');
+    }
+  }, [trackViewOnMount]);
+
+  return (
+    <View style={styles.screen}>
+      <Text style={styles.title}>Productos destacados</Text>
+      <FlatList
+        data={PRODUCTS}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.cardName}>{item.name}</Text>
+            <Text style={styles.cardCategory}>{item.category}</Text>
+            <Text style={styles.cardPrice}>{item.price}</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
 };
 
-const App = () => {
-  const [currentPage, setCurrentPage] = useState<'home' | 'products'>('home');
+// ----------- App raíz -----------
+const App: React.FC = () => {
+  const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [trackProductsOnOpen, setTrackProductsOnOpen] = useState(true);
+
+  // Cuando seleccionas categoría desde el menú
+  const handleSelectCategory = (section: string, category: string) => {
+    setMenuVisible(false);
+
+    // 🔹 Sólo View Category (en el módulo nativo NO hay trackAction)
+    PersonalizationModule.trackCategoryView(section, category);
+
+    // Abrimos productos sin disparar view:Products
+    setTrackProductsOnOpen(false);
+    setCurrentPage('products');
+  };
+
+  const goToHome = () => {
+    setCurrentPage('home');
+  };
+
+  const goToProductsFromTab = () => {
+    // Aquí sí queremos view:Products
+    setTrackProductsOnOpen(true);
+    setCurrentPage('products');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Encabezado */}
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Price Shoes App</Text>
+        <HamburgerButton onPress={() => setMenuVisible(true)} />
       </View>
 
-      {/* Pantalla actual */}
-      {currentPage === 'home' ? <HomeScreen /> : <ProductsScreen />}
+      {/* Contenido */}
+      {currentPage === 'home' ? (
+        <HomeScreen />
+      ) : (
+        <ProductsScreen trackViewOnMount={trackProductsOnOpen} />
+      )}
 
       {/* Tabs inferiores */}
       <View style={styles.tabBar}>
@@ -78,7 +121,7 @@ const App = () => {
             styles.tabButton,
             currentPage === 'home' && styles.tabButtonActive,
           ]}
-          onPress={() => setCurrentPage('home')}
+          onPress={goToHome}
         >
           <Text
             style={[
@@ -95,7 +138,7 @@ const App = () => {
             styles.tabButton,
             currentPage === 'products' && styles.tabButtonActive,
           ]}
-          onPress={() => setCurrentPage('products')}
+          onPress={goToProductsFromTab}
         >
           <Text
             style={[
@@ -107,6 +150,13 @@ const App = () => {
           </Text>
         </Pressable>
       </View>
+
+      {/* Menú lateral */}
+      <MenuDrawer
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onSelectCategory={handleSelectCategory}
+      />
     </SafeAreaView>
   );
 };
@@ -117,8 +167,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7f7fb',
   },
   header: {
-    padding: 16,
-    backgroundColor: '#1B365D', // color azul estilo Price Shoes
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#1B365D',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerText: {
     color: '#ffffff',
