@@ -6,20 +6,37 @@ import {
   Pressable,
   FlatList,
   StyleSheet,
+  Button,
 } from 'react-native';
 import { NativeModules } from 'react-native';
 
 import HamburgerButton from './src/components/HamburgerButton';
 import MenuDrawer from './src/components/MenuDrawer';
+import { CartProvider, useCart } from './src/components/context/CartContext';
 
 const { PersonalizationModule } = NativeModules;
 
 type Page = 'home' | 'products';
 
 const PRODUCTS = [
-  { id: '1', name: 'Tenis Urbanos Price Shoes', category: 'Calzado', price: '$49.99' },
-  { id: '2', name: 'Bolso Fashion Price Shoes', category: 'Accesorios', price: '$29.99' },
-  { id: '3', name: 'Sandalias Comfort Price Shoes', category: 'Calzado', price: '$39.99' },
+  {
+    id: '1',
+    name: 'Tenis Urbanos Price Shoes',
+    category: 'Calzado',
+    price: '$49.99',
+  },
+  {
+    id: '2',
+    name: 'Bolso Fashion Price Shoes',
+    category: 'Accesorios',
+    price: '$29.99',
+  },
+  {
+    id: '3',
+    name: 'Sandalias Comfort Price Shoes',
+    category: 'Calzado',
+    price: '$39.99',
+  },
 ];
 
 // ----------- Pantalla Home -----------
@@ -45,25 +62,47 @@ interface ProductsScreenProps {
   trackViewOnMount: boolean;
 }
 
-const ProductsScreen: React.FC<ProductsScreenProps> = ({ trackViewOnMount }) => {
+const ProductsScreen: React.FC<ProductsScreenProps> = ({
+  trackViewOnMount,
+}) => {
+  const { addToCart } = useCart();
   useEffect(() => {
     // 👇 Sólo mandamos view:Products si está habilitado
     if (trackViewOnMount) {
       PersonalizationModule.trackPageView('Products');
     }
   }, [trackViewOnMount]);
+  const handleAddToCart = (product: any) => {
+    addToCart(product);
+    const numericPrice = Number(product.price.replace(/[^0-9.-]+/g, ''));
 
+    const payload = {
+      productId: product.id,
+      name: product.name,
+      category: product.category,
+      price: numericPrice,
+      quantity: 1,
+      currency: 'USD',
+    };
+    PersonalizationModule.addToCart(payload);
+    console.log('[DEBUG] Sent AddToCart to SDK:', payload);
+  };
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>Productos destacados</Text>
       <FlatList
         data={PRODUCTS}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.cardName}>{item.name}</Text>
             <Text style={styles.cardCategory}>{item.category}</Text>
             <Text style={styles.cardPrice}>{item.price}</Text>
+
+            <Button
+              title="Agregar al carrito"
+              onPress={() => handleAddToCart(item)}
+            />
           </View>
         )}
       />
@@ -244,4 +283,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+const AppWrapper = () => {
+  return (
+    <CartProvider>
+      <App />
+    </CartProvider>
+  );
+};
+
+export default AppWrapper;

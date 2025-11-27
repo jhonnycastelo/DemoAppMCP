@@ -37,6 +37,11 @@ class MainApplication : Application(), ReactApplication {
 
     // 🔹 Inicializar Marketing Cloud Personalization (Evergage)
     Evergage.initialize(this)
+    val evergage = Evergage.getInstance();
+
+    // Recommended to set the authenticated user's ID as soon as known: 
+
+    evergage.setUserId("123456"); 
 
     val config = ClientConfiguration.Builder()
       .account("partnerfreewaymx")

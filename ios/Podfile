@@ -15,6 +15,10 @@ if linkage != nil
 end
 
 target 'PriceShoesDemo' do
+  pod 'Evergage', '~> 1.4'
+end
+
+target 'PriceShoesDemo' do
   config = use_native_modules!
 
   use_react_native!(
