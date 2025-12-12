@@ -41,7 +41,7 @@ class MainApplication : Application(), ReactApplication {
 
     // Recommended to set the authenticated user's ID as soon as known: 
 
-    evergage.setUserId("123456"); 
+    //evergage.setUserId("123456"); 
 
     val config = ClientConfiguration.Builder()
       .account("partnerfreewaymx")
@@ -52,5 +52,8 @@ class MainApplication : Application(), ReactApplication {
 
     // 🔹 Inicializar React Native (como ya estaba)
     loadReactNative(this)
+
+    
   }
+  
 }
