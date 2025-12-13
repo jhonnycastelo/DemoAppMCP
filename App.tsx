@@ -21,7 +21,7 @@ import { CartProvider, useCart } from './src/components/context/CartContext';
 import { FeaturedBanner } from './src/components/FeaturedBanner';
 
 const { PersonalizationModule } = NativeModules;
-const emitter = new NativeEventEmitter(PersonalizationModule);
+//const emitter = new NativeEventEmitter(PersonalizationModule);
 type Page = 'home' | 'products';
 
 const PRODUCTS = [
@@ -58,22 +58,6 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     PersonalizationModule.trackPageView('Home');
     //PersonalizationModule.jsIsReady();
-    const sub = emitter.addListener('FeaturedProductCampaign', data => {
-      console.log('[DEBUG] Campaign event received:', data);
-
-      if (data && data.productId) {
-        const featured: FeaturedProduct = {
-          id: data.productId,
-          name: data.name || data.title,
-          imageUrl: data.imageURL,
-          price: data.price,
-          description: data.description,
-        };
-        //setFeaturedProduct(featured);
-      }
-    });
-
-    return () => sub.remove();
   }, []);
 
   return (
@@ -104,67 +88,28 @@ const ProductsScreen: React.FC<ProductsScreenProps> = ({
   useEffect(() => {
     if (trackViewOnMount) {
       PersonalizationModule.trackPageView('Products');
-      //PersonalizationModule.registerCampaignHandler();
+      PersonalizationModule.registerCampaignHandler();
     }
-    //PersonalizationModule.jsIsReady();
-    const subscription = DeviceEventEmitter.addListener(
+    const eventEmitter = new NativeEventEmitter(PersonalizationModule);
+    let eventListener = eventEmitter.addListener(
       'FeaturedProductCampaign',
       data => {
-        console.log('[DEBUG] Campaign event received:', data);
-
-        if (data && data.productId) {
-          const featured: FeaturedProduct = {
-            id: data.productId,
-            name: data.name || data.title,
-            imageUrl: data.imageURL,
-            price: data.price,
-            description: data.description,
-          };
-          setFeaturedProduct(featured);
-        }
+        console.log(data); // "someValue"
+        setFeaturedProduct({
+          id: data.productId,
+          name: data.name,
+          price: data.price,
+          imageUrl: data.imageUrl,
+          description: data.description,
+        });
       },
     );
 
-    return () => subscription.remove();
+    // Removes the listener once unmounted
+    return () => {
+      eventListener.remove();
+    };
   }, []);
-  // const [featuredProduct, setFeaturedProduct] =
-  //   useState<FeaturedProduct | null>(null);
-  // useEffect(() => {
-  //   // 👇 Sólo mandamos view:Products si está habilitado
-  //   if (trackViewOnMount) {
-  //     PersonalizationModule.trackPageView('Products');
-  //   }
-  //   // Optional: delay slightly to ensure native screen exists
-  //   setTimeout(() => {
-  //     PersonalizationModule.registerCampaignHandler?.();
-  //   }, 5000);
-  //   // Listen for the campaign event from Android
-  //   const subscription = DeviceEventEmitter.addListener(
-  //     'FeaturedProductCampaign',
-  //     data => {
-  //       console.log('Received Featured Product:', data);
-  //       console.log('[DEBUG] Received Featured Product:', data);
-
-  //       // Ensure data is valid and contains expected fields
-  //       if (data && data.productId) {
-  //         const featured = {
-  //           id: data.productId,
-  //           name: data.title || data.name,
-  //           imageUrl: data.imageUrl,
-  //           price: data.price,
-  //           description: data.description,
-  //         };
-
-  //         setFeaturedProduct(featured);
-  //         console.log('[DEBUG] Featured Product Stored:', featured);
-  //         // update state to show banner
-  //       }
-  //     },
-  //   );
-  //   return () => {
-  //     subscription.remove();
-  //   };
-  //}, [trackViewOnMount]);
   const handleAddToCart = (product: any) => {
     addToCart(product);
     const numericPrice = Number(product.price.replace(/[^0-9.-]+/g, ''));

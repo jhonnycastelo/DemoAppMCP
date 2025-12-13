@@ -26,7 +26,6 @@ class MainApplication : Application(), ReactApplication {
           // 👉 Aquí SE AGREGA el paquete manualmente 👇
           // -------------------------------------------
           add(PersonalizationPackage())
-
           // (Este bloque puede tener otros packages también)
         },
     )
