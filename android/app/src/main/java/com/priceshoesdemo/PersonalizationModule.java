@@ -85,8 +85,8 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
                         // price could be number or string — adapt as needed
                         payload.putString("price", data.optString("price"));
                     }
-                    if (data.has("category")) {
-                        payload.putString("category", data.optString("category"));
+                    if (data.has("description")) {
+                        payload.putString("description", data.optString("description"));
                     }
                     Log.d("MCP", "Campaign data: " + payload);
                     sendEvent(reactContext, "FeaturedProductCampaign", payload);
