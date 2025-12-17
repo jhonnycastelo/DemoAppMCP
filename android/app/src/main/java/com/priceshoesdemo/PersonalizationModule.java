@@ -24,6 +24,7 @@ import org.json.JSONObject;
 public class PersonalizationModule extends ReactContextBaseJavaModule {
 
     private final ReactApplicationContext reactContext;
+    private Campaign currentCampaign;
 
     private void sendEvent(ReactContext reactContext,
             String eventName,
@@ -69,6 +70,7 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
             @Override
             public void handleCampaign(Campaign campaign) {
                 try {
+                    currentCampaign = campaign;
                     JSONObject data = campaign.getData();
                     WritableMap payload = Arguments.createMap();
                     // Example keys — match what you defined in the campaign payload
@@ -138,6 +140,23 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
                 ctx.addToCart(lineItem);
             }
         } catch (Exception ignored) {
+        }
+    }
+
+    @ReactMethod
+    public void trackFeaturedProductClick(String productId) {
+        if (currentCampaign != null) {
+            Context screen = Evergage.getInstance().getGlobalContext();
+            screen.trackClickthrough(currentCampaign);
+        }
+    }
+
+    @ReactMethod
+    public void trackFeaturedProductDismiss(String productId) {
+        if (currentCampaign != null) {
+            Log.e("Featured Product Dismiss", currentCampaign.getCampaignName());
+            Context screen = Evergage.getInstance().getGlobalContext();
+            screen.trackDismissal(currentCampaign);
         }
     }
 }

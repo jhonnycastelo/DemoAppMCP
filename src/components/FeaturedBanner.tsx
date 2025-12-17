@@ -1,6 +1,19 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { NativeModules, NativeEventEmitter } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+} from 'react-native';
+import { NativeModules } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+import { navigate } from '../navigation/NavigationService';
+
 const { PersonalizationModule } = NativeModules;
 
 interface FeaturedProduct {
@@ -12,63 +25,105 @@ interface FeaturedProduct {
 }
 
 interface FeaturedBannerProps {
-  product: FeaturedProduct;
+  product: FeaturedProduct | null;
+  visible: boolean;
+  onClose: () => void;
 }
 
-export const FeaturedBanner: React.FC<FeaturedBannerProps> = ({ product }) => {
+type NavProp = NativeStackNavigationProp<RootStackParamList, 'ProductDetail'>;
+
+const navigation = useNavigation<NavProp>();
+export const FeaturedBanner: React.FC<FeaturedBannerProps> = ({
+  product,
+  visible,
+  onClose,
+}) => {
+  // 🔐 Guard FIRST
+  if (!visible || !product) {
+    return null;
+  }
   const { id, name, imageUrl, price, description } = product;
 
   const handlePress = () => {
-    // Track clickthrough via native module
     PersonalizationModule.trackFeaturedProductClick(id);
-
-    // Navigate to product detail
-    // (replace with your navigation)
-    console.log('User clicked:', id);
+    console.log('User clicked:', name);
+    onClose();
+    navigation.navigate('ProductDetail', {
+      product,
+    });
   };
 
   const handleDismiss = () => {
     PersonalizationModule.trackFeaturedProductDismiss(id);
+    onClose();
   };
 
   return (
-    <View style={styles.banner}>
-      <Image source={{ uri: imageUrl }} style={styles.image} />
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+    >
+      {/* Overlay */}
+      <Pressable style={styles.overlay} onPress={handleDismiss}>
+        {/* Prevent overlay press from closing when tapping card */}
+        <Pressable style={styles.popup} onPress={() => {}}>
+          {/* Close icon */}
+          <TouchableOpacity style={styles.closeButton} onPress={handleDismiss}>
+            <Text style={styles.closeText}>✕</Text>
+          </TouchableOpacity>
 
-      <Text style={styles.title}>{name}</Text>
-      <Text style={styles.price}>${price}</Text>
-      <Text style={styles.description}>{description}</Text>
+          <Image source={{ uri: imageUrl }} style={styles.image} />
 
-      <View style={styles.actions}>
-        <TouchableOpacity onPress={handlePress}>
-          <Text style={styles.button}>View Product</Text>
-        </TouchableOpacity>
+          <Text style={styles.title}>{name}</Text>
+          {price !== undefined && <Text style={styles.price}>${price}</Text>}
+          <Text style={styles.description}>{description}</Text>
 
-        <TouchableOpacity onPress={handleDismiss}>
-          <Text style={styles.dismiss}>Dismiss</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <TouchableOpacity style={styles.primaryButton} onPress={handlePress}>
+            <Text style={styles.primaryButtonText}>View Product</Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  banner: {
-    margin: 16,
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 16,
+  },
+  popup: {
+    width: '100%',
+    maxWidth: 360,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    elevation: 3,
+    borderRadius: 16,
+    padding: 16,
+    elevation: 6,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 10,
+  },
+  closeText: {
+    fontSize: 18,
+    color: '#666',
   },
   image: {
     width: '100%',
     height: 160,
-    borderRadius: 8,
+    borderRadius: 12,
+    marginBottom: 12,
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 8,
   },
   price: {
     fontSize: 16,
@@ -76,19 +131,18 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    marginTop: 4,
+    marginTop: 8,
     color: '#555',
   },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
+  primaryButton: {
+    marginTop: 16,
+    backgroundColor: '#007bff',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
   },
-  button: {
-    color: '#007bff',
+  primaryButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
-  },
-  dismiss: {
-    color: '#888',
   },
 });

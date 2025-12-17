@@ -19,6 +19,7 @@ import HamburgerButton from './src/components/HamburgerButton';
 import MenuDrawer from './src/components/MenuDrawer';
 import { CartProvider, useCart } from './src/components/context/CartContext';
 import { FeaturedBanner } from './src/components/FeaturedBanner';
+import AppNavigator from './src/navigation/AppNavigator';
 
 const { PersonalizationModule } = NativeModules;
 //const emitter = new NativeEventEmitter(PersonalizationModule);
@@ -45,6 +46,12 @@ const PRODUCTS = [
   },
 ];
 
+export interface Product {
+  id: string;
+  name: string;
+  category?: string;
+  price?: number;
+}
 interface FeaturedProduct {
   id: string;
   name: string;
@@ -83,13 +90,15 @@ const ProductsScreen: React.FC<ProductsScreenProps> = ({
   const { addToCart } = useCart();
   const [featuredProduct, setFeaturedProduct] =
     useState<FeaturedProduct | null>(null);
+  const [showPopup, setShowPopup] = useState(true);
 
-  // Listen to campaign events from native
   useEffect(() => {
     if (trackViewOnMount) {
       PersonalizationModule.trackPageView('Products');
       PersonalizationModule.registerCampaignHandler();
     }
+  }, [trackViewOnMount]);
+  useEffect(() => {
     const eventEmitter = new NativeEventEmitter(PersonalizationModule);
     let eventListener = eventEmitter.addListener(
       'FeaturedProductCampaign',
@@ -127,7 +136,12 @@ const ProductsScreen: React.FC<ProductsScreenProps> = ({
   };
   return (
     <View style={styles.screen}>
-      {featuredProduct && <FeaturedBanner product={featuredProduct} />}
+      <FeaturedBanner
+        product={featuredProduct}
+        visible={!!featuredProduct && showPopup}
+        onClose={() => setShowPopup(false)}
+      />
+
       <Text style={styles.title}>Productos destacados</Text>
       <FlatList
         data={PRODUCTS}
@@ -322,12 +336,4 @@ const styles = StyleSheet.create({
   },
 });
 
-const AppWrapper = () => {
-  return (
-    <CartProvider>
-      <App />
-    </CartProvider>
-  );
-};
-
-export default AppWrapper;
+export default App;
