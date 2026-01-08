@@ -1,85 +1,122 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { NativeModules } from 'react-native';
-import { Product } from '../../App';
-import { RootStackParamList } from '../navigation/types';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const { PersonalizationModule } = NativeModules;
+export const ProductDetailScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute<any>();
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetail'>;
-
-export const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { product } = route.params;
-  const { id, name, category, price } = product;
-
-  // 🔍 Track product view (optional but recommended)
-  useEffect(() => {
-    PersonalizationModule.trackProductView?.(id, category);
-  }, [id, category]);
+  const { name, category, price, imageUrl } = route.params.product;
 
   return (
-    <>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text>Back</Text>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.back}>← Back</Text>
+        </TouchableOpacity>
+      </View>
 
-      <Text>{name}</Text>
-      <Text>{category}</Text>
-      <Text>${price}</Text>
-    </>
+      {/* Image */}
+      {imageUrl && (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      )}
+
+      {/* Content */}
+      <View style={styles.content}>
+        <Text style={styles.name}>{name}</Text>
+
+        {category && <Text style={styles.category}>{category}</Text>}
+
+        {price !== undefined && <Text style={styles.price}>${price}</Text>}
+      </View>
+
+      {/* Footer CTA */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.cta}>
+          <Text style={styles.ctaText}>Add to Cart</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
   },
+
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+
   back: {
     fontSize: 16,
     color: '#007bff',
+    fontWeight: '500',
   },
+
+  image: {
+    width: '100%',
+    height: 280,
+    backgroundColor: '#f2f2f2',
+  },
+
   content: {
-    flex: 1,
     paddingHorizontal: 16,
-    justifyContent: 'center',
+    paddingTop: 16,
   },
+
   name: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: '#111',
   },
+
   category: {
     fontSize: 14,
-    color: '#666',
+    color: '#777',
     marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
+
   price: {
     fontSize: 22,
     fontWeight: '600',
+    color: '#1B365D',
     marginTop: 12,
   },
+
   footer: {
     padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
+
   cta: {
     backgroundColor: '#007bff',
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: 'center',
   },
+
   ctaText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });
