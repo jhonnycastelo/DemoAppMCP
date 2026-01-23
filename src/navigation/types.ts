@@ -1,7 +1,8 @@
 // navigation/types.ts
-import { Product } from '../../App';
+import { Product } from '../types/Product';
 export type RootStackParamList = {
-    AppRoot: undefined,
+    Home: undefined,
+    Products: undefined,
     ProductDetail: {
     product: Product;
   };

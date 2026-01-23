@@ -1,31 +1,40 @@
 // navigation/AppNavigator.tsx
-import { NavigationContainer } from '@react-navigation/native';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { navigationRef, flushNavigationQueue } from './NavigationService';
-import { RootStackParamList } from './types';
-import App from '../../App';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import HomeScreen from '../screens/HomeScreen';
+import ProductsScreen from '../screens/ProductsScreen';
 import { ProductDetailScreen } from '../screens/ProductDetailsScreen';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
+// Tabs for main app
+function MainTabs() {
+  return (
+    <Tab.Navigator screenOptions={{ headerShown: false }}>
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Products" component={ProductsScreen} />
+    </Tab.Navigator>
+  );
+}
+
+// Stack for app navigation including detail screens
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        {/* Your EXISTING App.tsx */}
-        <Stack.Screen
-          name="AppRoot"
-          component={App}
-          options={{ headerShown: false }}
-        />
-
-        {/* New detail screen */}
-        <Stack.Screen
-          name="ProductDetail"
-          component={ProductDetailScreen}
-          options={{ title: 'Detalle del producto' }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator>
+      {/* Tabs at the root */}
+      <Stack.Screen
+        name="MainTabs"
+        component={MainTabs}
+        options={{ headerShown: false }}
+      />
+      {/* Detail screen pushed on top */}
+      <Stack.Screen
+        name="ProductDetail"
+        component={ProductDetailScreen}
+        options={{ title: 'Detalle del producto' }}
+      />
+    </Stack.Navigator>
   );
 }

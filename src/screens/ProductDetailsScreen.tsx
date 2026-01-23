@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,21 +8,46 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { NativeModules } from 'react-native';
+
+const { PersonalizationModule } = NativeModules;
 
 export const ProductDetailScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<any>();
 
-  const { name, category, price, imageUrl } = route.params.product;
+  const { id, name, imageUrl, price, description, category } =
+    route.params.product;
+  const product = route.params.product;
+  const itemPayload = {
+    id: product.id,
+    name: product.name,
+    category: product.category,
+    price: product.price,
+    imageUrl: product.imageUrl,
+    description: product.description,
+  };
 
+  useEffect(() => {
+    const payload = {
+      id,
+      name,
+      category,
+      price: Number(price),
+      imageUrl,
+      description,
+    };
+
+    console.log('[VIEW ITEM]', payload);
+
+    PersonalizationModule.trackPageView('Product Detail');
+
+    PersonalizationModule.viewItem(payload);
+  }, [id]);
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
-      </View>
+      <View style={styles.header}></View>
 
       {/* Image */}
       {imageUrl && (
@@ -40,6 +65,7 @@ export const ProductDetailScreen = () => {
         {category && <Text style={styles.category}>{category}</Text>}
 
         {price !== undefined && <Text style={styles.price}>${price}</Text>}
+        {description && <Text style={styles.category}>{description}</Text>}
       </View>
 
       {/* Footer CTA */}

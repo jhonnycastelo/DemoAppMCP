@@ -7,7 +7,11 @@ interface Props {
   onSelectCategory: (section: string, category: string) => void;
 }
 
-const MenuDrawer: React.FC<Props> = ({ visible, onClose, onSelectCategory }) => {
+const MenuDrawer: React.FC<Props> = ({
+  visible,
+  onClose,
+  onSelectCategory,
+}) => {
   if (!visible) return null;
 
   return (
@@ -29,7 +33,9 @@ const MenuDrawer: React.FC<Props> = ({ visible, onClose, onSelectCategory }) => 
           <Text style={styles.item}>Bota</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => onSelectCategory('Caballero', 'Correr')}>
+        <TouchableOpacity
+          onPress={() => onSelectCategory('Caballero', 'Correr')}
+        >
           <Text style={styles.item}>Correr</Text>
         </TouchableOpacity>
 

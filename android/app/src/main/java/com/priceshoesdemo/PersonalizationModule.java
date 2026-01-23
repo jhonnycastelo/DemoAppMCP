@@ -15,6 +15,7 @@ import com.evergage.android.Evergage;
 import com.evergage.android.Context;
 import com.evergage.android.promote.Category;
 import com.evergage.android.promote.LineItem;
+import com.evergage.android.promote.Item;
 import com.evergage.android.promote.Product;
 import com.evergage.android.CampaignHandler;
 import com.evergage.android.Campaign;
@@ -138,6 +139,33 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
             Context ctx = Evergage.getInstance().getGlobalContext();
             if (ctx != null) {
                 ctx.addToCart(lineItem);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    @ReactMethod
+    public void viewItem(ReadableMap itemMap) {
+        try {
+            String productId = itemMap.getString("id");
+            double price = itemMap.getDouble("price");
+            String name = itemMap.getString("name");
+            String description = itemMap.getString("description");
+            String imageUrl = itemMap.getString("imageUrl");
+
+            JSONObject json = new JSONObject();
+            json.put("id", productId);
+            json.put("name", name);
+            json.put("price", price);
+            json.put("description", description);
+            json.put("imageUrl", imageUrl);
+
+            Item item = Item.fromJSONString(json.toString());
+            Log.e("Evergage-Item-Payload", json.toString());
+            Context ctx = Evergage.getInstance().getGlobalContext();
+            if (ctx != null) {
+                Log.e("Evergage-Item-Payload-Not-Null", item.toString());
+                ctx.viewItem(item);
             }
         } catch (Exception ignored) {
         }
