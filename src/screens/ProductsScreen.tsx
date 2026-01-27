@@ -64,14 +64,17 @@ export default function ProductsScreen() {
 
     const numericPrice = Number(product.price.replace(/[^0-9.-]+/g, ''));
 
-    PersonalizationModule.addToCart({
+    const payload = {
       productId: product.id,
       name: product.name,
       category: product.category,
       price: numericPrice,
       quantity: 1,
       currency: 'USD',
-    });
+    };
+
+    PersonalizationModule.addToCart(payload);
+    console.log('[DEBUG] Sent AddToCart to SDK:', payload);
   };
 
   return (

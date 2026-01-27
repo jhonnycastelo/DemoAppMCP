@@ -138,6 +138,7 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
 
             Context ctx = Evergage.getInstance().getGlobalContext();
             if (ctx != null) {
+                Log.e("Evergage-Cart-Payload", json.toString());
                 ctx.addToCart(lineItem);
             }
         } catch (Exception ignored) {
@@ -147,27 +148,57 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void viewItem(ReadableMap itemMap) {
         try {
-            String productId = itemMap.getString("id");
-            double price = itemMap.getDouble("price");
-            String name = itemMap.getString("name");
-            String description = itemMap.getString("description");
-            String imageUrl = itemMap.getString("imageUrl");
+            // Required fields
+            String productId = itemMap.hasKey("id") ? itemMap.getString("id") : null;
+            String name = itemMap.hasKey("name") ? itemMap.getString("name") : null;
+            double price = itemMap.hasKey("price") ? itemMap.getDouble("price") : 0.0;
 
+            JSONObject properties = new JSONObject();
+
+            if (productId == null || name == null) {
+                Log.e("Evergage-Item-Payload", "Required fields (id, name) missing!");
+                return;
+            }
+            if (itemMap.hasKey("description")) {
+                properties.put("description", itemMap.getString("description"));
+            }
+            if (itemMap.hasKey("imageUrl")) {
+                properties.put("imageUrl", itemMap.getString("imageUrl"));
+            }
+            if (itemMap.hasKey("category")) {
+                properties.put("category", itemMap.getString("category"));
+            }
+
+            // Build final JSON
             JSONObject json = new JSONObject();
             json.put("id", productId);
             json.put("name", name);
-            json.put("price", price);
-            json.put("description", description);
-            json.put("imageUrl", imageUrl);
+            json.put("price", String.valueOf(price)); // price as string
+            json.put("properties", properties);
 
-            Item item = Item.fromJSONString(json.toString());
-            Log.e("Evergage-Item-Payload", json.toString());
-            Context ctx = Evergage.getInstance().getGlobalContext();
-            if (ctx != null) {
-                Log.e("Evergage-Item-Payload-Not-Null", item.toString());
-                ctx.viewItem(item);
+            // Log JSON
+            Log.e("Evergage-Item-Payload-JSON", json.toString());
+
+            // Parse item
+            Product product = Product.fromJSONObject(json, productId);
+
+            if (product != null) {
+                Log.e("Evergage-Item-Payload-ITEM", product.toString());
+            } else {
+                Log.e("Evergage-Item-Payload-ITEM", "Item is null");
             }
-        } catch (Exception ignored) {
+
+            // Send to Evergage
+            Context ctx = Evergage.getInstance().getGlobalContext();
+            if (ctx != null && product != null) {
+                ctx.viewItem(product);
+                Log.e("Evergage-Item-Payload-SENT", product.toString());
+            } else {
+                Log.e("Evergage-Item-Payload", "Evergage global context is null or item is null");
+            }
+
+        } catch (Exception e) {
+            Log.e("Evergage-Item-Payload-ERROR", Log.getStackTraceString(e));
         }
     }
 

@@ -9,13 +9,14 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeModules } from 'react-native';
+import { useCart } from '../components/context/CartContext';
 
 const { PersonalizationModule } = NativeModules;
 
 export const ProductDetailScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<any>();
-
+  const { addToCart } = useCart();
   const { id, name, imageUrl, price, description, category } =
     route.params.product;
   const product = route.params.product;
@@ -44,6 +45,23 @@ export const ProductDetailScreen = () => {
 
     PersonalizationModule.viewItem(payload);
   }, [id]);
+  // Handle Add to Cart
+  const handleAddToCart = () => {
+    addToCart(itemPayload); // <-- add the product to cart
+    console.log('[CART] Added:', itemPayload);
+    const numericPrice = Number(itemPayload.price.replace(/[^0-9.-]+/g, ''));
+
+    PersonalizationModule.addToCart({
+      productId: itemPayload.id,
+      name: itemPayload.name,
+      category: itemPayload.category,
+      price: numericPrice,
+      quantity: 1,
+      currency: 'USD',
+    });
+    // Optional: show confirmation toast or navigate
+    // navigation.navigate('Cart');
+  };
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -67,10 +85,9 @@ export const ProductDetailScreen = () => {
         {price !== undefined && <Text style={styles.price}>${price}</Text>}
         {description && <Text style={styles.category}>{description}</Text>}
       </View>
-
       {/* Footer CTA */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.cta}>
+        <TouchableOpacity style={styles.cta} onPress={handleAddToCart}>
           <Text style={styles.ctaText}>Add to Cart</Text>
         </TouchableOpacity>
       </View>
