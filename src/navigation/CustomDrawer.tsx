@@ -5,8 +5,11 @@ import {
   DrawerContentScrollView,
   DrawerItemList,
 } from '@react-navigation/drawer';
+import { DrawerItem } from '@react-navigation/drawer';
 
 export default function CustomDrawer(props: any) {
+  const { navigation } = props;
+
   return (
     <DrawerContentScrollView {...props}>
       {/* Header */}
@@ -19,7 +22,27 @@ export default function CustomDrawer(props: any) {
       </View>
 
       {/* Drawer items */}
-      <DrawerItemList {...props} />
+      <DrawerItem
+        label="Home"
+        onPress={() => {
+          navigation.navigate('Home', {
+            screen: 'Home',
+            params: { screen: 'Home' },
+          });
+          navigation.closeDrawer();
+        }}
+      />
+
+      <DrawerItem
+        label="Products"
+        onPress={() => {
+          navigation.navigate('Home', {
+            screen: 'Home',
+            params: { screen: 'Products' },
+          });
+          navigation.closeDrawer();
+        }}
+      />
     </DrawerContentScrollView>
   );
 }

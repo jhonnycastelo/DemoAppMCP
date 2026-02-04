@@ -2,27 +2,33 @@ import { StyleSheet, Text, View, Image } from 'react-native';
 import React from 'react';
 import MaterialDesignIcons from '@react-native-vector-icons/material-design-icons';
 
-const CartCard = () => {
+const CartCard = (item: any) => {
+  console.log('CartCard item:', item);
   return (
     <View style={styles.card}>
-      <Image
-        source={{
-          uri: 'https://res.cloudinary.com/priceshoes/f_auto,q_auto:best,w_750//product/1/2/1284637-1.jpg',
-        }}
-        style={styles.image}
-      />
-      <View style={styles.cardContent}>
-        <Text style={styles.title}>Cart Item</Text>
-        <Text style={styles.description}>
-          This is a description of the cart item.
-        </Text>
-        <Text style={styles.price}>$49.99</Text>
+      <View style={styles.imageWrapper}>
+        <Image source={{ uri: item.imageUrl }} style={styles.image} />
+
+        {/* Quantity badge */}
+        <View style={styles.quantityBadge}>
+          <Text style={styles.quantityText}>{item.quantity}</Text>
+        </View>
       </View>
+
+      <View style={styles.cardContent}>
+        <Text style={styles.title}>{item.name}</Text>
+        <Text style={styles.description}>{item.category}</Text>
+        <Text style={styles.price}>
+          ${(item.price * item.quantity).toFixed(2)}
+        </Text>
+      </View>
+
       <MaterialDesignIcons
         name="delete"
         size={24}
         color="red"
         style={styles.deleteIcon}
+        onPress={() => console.log('Delete item:', item)}
       />
     </View>
   );
@@ -79,5 +85,26 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 8,
     marginBottom: 8,
+  },
+  imageWrapper: {
+    position: 'relative',
+  },
+
+  quantityBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: 'black',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  quantityText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

@@ -1,5 +1,5 @@
 // navigation/AppNavigator.tsx
-import React from 'react';
+import React, { use, useContext } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
@@ -10,6 +10,7 @@ import CustomDrawer from './CustomDrawer';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import CartScreen from '../screens/CartScreen';
+import { useCart } from '../components/context/CartContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -17,12 +18,15 @@ const Drawer = createDrawerNavigator();
 
 // Tabs for main app
 function MainTabs() {
+  const value = useCart();
+  const cartCount = value.cart.length;
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
       <Tab.Screen
-        name="Home"
+        name="HomeTab"
         component={HomeScreen}
         options={{
+          tabBarLabel: 'Home',
           tabBarIcon: ({ focused, color, size }) => (
             <MaterialDesignIcons
               name={focused ? 'home' : 'home-outline'}
@@ -33,9 +37,10 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Products"
+        name="ProductsTab"
         component={ProductsScreen}
         options={{
+          tabBarLabel: 'Products',
           tabBarIcon: ({ focused, color, size }) => (
             <MaterialDesignIcons
               name={focused ? 'shoe-print' : 'shoe-print'}
@@ -46,16 +51,21 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Cart"
+        name="CartTab"
         component={CartScreen}
         options={{
-          tabBarIcon: ({ focused, color, size }) => (
-            <MaterialDesignIcons
-              name={focused ? 'cart' : 'cart-outline'}
-              size={size}
-              color={color}
-            />
-          ),
+          tabBarLabel: 'Cart',
+          tabBarIcon: ({ focused, color, size }) => {
+            console.log('Cart items count in tab:', value.cart.length);
+            return (
+              <MaterialDesignIcons
+                name={focused ? 'cart' : 'cart-outline'}
+                size={size}
+                color={color}
+              />
+            );
+          },
+          tabBarBadge: cartCount > 0 ? cartCount : undefined,
         }}
       />
     </Tab.Navigator>
@@ -65,17 +75,11 @@ function MainTabs() {
 function MainStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home" component={MainTabs} />
-      <Stack.Screen name="Products" component={ProductsScreen} />
+      <Stack.Screen name="Tabs" component={MainTabs} />
       <Stack.Screen
         name="ProductDetail"
         component={ProductDetailScreen}
         options={{ title: 'Detalle del producto' }}
-      />
-      <Stack.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{ title: 'My Cart' }}
       />
     </Stack.Navigator>
   );
@@ -88,15 +92,9 @@ function MainDrawer() {
       drawerContent={props => <CustomDrawer {...props}></CustomDrawer>}
     >
       <Drawer.Screen
-        name="Home"
+        name="Root"
         component={MainStack}
         options={{ headerTitle: '' }}
-      />
-      <Drawer.Screen name="Products" component={ProductsScreen} />
-      <Drawer.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{ headerShown: true, headerTitle: 'My Cart' }}
       />
     </Drawer.Navigator>
   );

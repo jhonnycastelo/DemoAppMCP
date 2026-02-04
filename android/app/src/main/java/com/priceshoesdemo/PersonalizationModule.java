@@ -16,11 +16,16 @@ import com.evergage.android.Context;
 import com.evergage.android.promote.Category;
 import com.evergage.android.promote.LineItem;
 import com.evergage.android.promote.Item;
+import com.evergage.android.promote.Order;
 import com.evergage.android.promote.Product;
 import com.evergage.android.CampaignHandler;
 import com.evergage.android.Campaign;
 import com.evergage.android.Screen;
 import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import com.facebook.react.bridge.ReadableArray;
 
 public class PersonalizationModule extends ReactContextBaseJavaModule {
 
@@ -99,6 +104,76 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
                 }
             }
         }, "Featured Product");
+    }
+
+    @ReactMethod
+    public void viewCart(ReadableArray cartItems) {
+        double totalPrice = 0.0;
+        List<LineItem> lineItems = new ArrayList<>();
+        for (int i = 0; i < cartItems.size(); i++) {
+            ReadableMap item = cartItems.getMap(i);
+            try {
+                Log.e("EVERGAGE-Item-Payload", item.toString());
+                String productId = item.getString("id");
+                double price = item.getDouble("price");
+                int quantity = item.getInt("quantity");
+                String name = item.getString("name");
+                totalPrice += price * quantity;
+
+                JSONObject json = new JSONObject();
+                json.put("id", productId);
+                json.put("name", name);
+                json.put("price", price);
+
+                Product product = Product.fromJSONObject(json, productId);
+                LineItem lineItem = new LineItem(product, quantity);
+                lineItems.add(lineItem);
+            } catch (Exception ignored) {
+            }
+        }
+        if (!lineItems.isEmpty()) {
+
+            Order order = new Order("cart-123", lineItems, totalPrice);
+            Context ctx = Evergage.getInstance().getGlobalContext();
+            Log.e("Evergage-Item-Payload-JSON", order.toString());
+            if (ctx != null) {
+                ctx.viewCart(order);
+            }
+        }
+    }
+
+    @ReactMethod
+    public void purchaseCart(ReadableArray cartItems) {
+        double totalPrice = 0.0;
+        List<LineItem> lineItems = new ArrayList<>();
+        for (int i = 0; i < cartItems.size(); i++) {
+            ReadableMap item = cartItems.getMap(i);
+            try {
+                String productId = item.getString("id");
+                double price = item.getDouble("price");
+                int quantity = item.getInt("quantity");
+                String name = item.getString("name");
+                totalPrice += price * quantity;
+
+                JSONObject json = new JSONObject();
+                json.put("id", productId);
+                json.put("name", name);
+                json.put("price", price);
+
+                Product product = Product.fromJSONObject(json, productId);
+                LineItem lineItem = new LineItem(product, quantity);
+                lineItems.add(lineItem);
+            } catch (Exception ignored) {
+            }
+        }
+        if (!lineItems.isEmpty()) {
+            UUID uuid = UUID.randomUUID();
+            Order order = new Order(uuid.toString(), lineItems, totalPrice);
+            Context ctx = Evergage.getInstance().getGlobalContext();
+            if (ctx != null) {
+                ctx.purchase(order);
+            }
+        }
     }
 
     /**

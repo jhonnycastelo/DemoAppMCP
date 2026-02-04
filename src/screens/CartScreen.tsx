@@ -1,17 +1,39 @@
 import { StyleSheet, Text, View, Button, TouchableOpacity } from 'react-native';
-import React from 'react';
+import React, { use, useEffect } from 'react';
 import CartCard from '../components/CartCard';
+import { FlatList } from 'react-native-gesture-handler';
+import { useCart } from '../components/context/CartContext';
+import { NativeModules } from 'react-native';
+
+const { PersonalizationModule } = NativeModules;
 
 const CartScreen = () => {
+  const { cart, totalPrice } = useCart();
+  useEffect(() => {
+    PersonalizationModule.trackPageView('Cart');
+    console.log('[VIEW CART]', cart);
+    PersonalizationModule.viewCart(cart);
+  }, []);
+
+  const handleCheckout = () => {
+    console.log('[CHECKOUT] Initiated with items:', cart);
+    PersonalizationModule.purchaseCart(cart);
+  };
+
   return (
     <View style={styles.container}>
-      <Text>Cart Screen</Text>
-      <CartCard></CartCard>
+      <FlatList
+        data={cart}
+        renderItem={({ item }) => CartCard(item)}
+      ></FlatList>
       <View style={styles.pricingContainer}>
         <Text style={styles.totalText}>Total: </Text>
-        <Text style={styles.totalPrice}>$250.00</Text>
+        <Text style={styles.totalPrice}>${totalPrice.toFixed(2)}</Text>
       </View>
-      <TouchableOpacity style={styles.CheckoutButtonContainer}>
+      <TouchableOpacity
+        style={styles.CheckoutButtonContainer}
+        onPress={handleCheckout}
+      >
         <Text style={styles.checkoutButtonText}>Checkout</Text>
       </TouchableOpacity>
     </View>
