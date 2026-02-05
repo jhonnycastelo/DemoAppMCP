@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import com.facebook.react.bridge.ReadableArray;
+import java.util.Iterator;
 
 public class PersonalizationModule extends ReactContextBaseJavaModule {
 
@@ -63,7 +64,7 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void registerCampaignHandler() {
+    public void registerCampaignHandler(String campaignName) {
         Activity activity = getCurrentActivity();
 
         if (activity != null) {
@@ -71,39 +72,41 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
         }
 
         Context screen = Evergage.getInstance().getGlobalContext();
-
-        screen.setCampaignHandler(new CampaignHandler() {
+        CampaignHandler handler = new CampaignHandler() {
             @Override
             public void handleCampaign(Campaign campaign) {
                 try {
-                    currentCampaign = campaign;
+                    WritableMap event = Arguments.createMap();
+
+                    // 1️⃣ Campaign metadata
+                    event.putString("campaignName", campaign.getCampaignName());
+                    event.putString("campaignId", campaign.getCampaignId());
+
+                    // 2️⃣ Campaign payload (dynamic)
                     JSONObject data = campaign.getData();
                     WritableMap payload = Arguments.createMap();
-                    // Example keys — match what you defined in the campaign payload
-                    if (data.has("id")) {
-                        payload.putString("productId", data.optString("id"));
-                    }
-                    if (data.has("name")) {
-                        payload.putString("name", data.optString("name"));
-                    }
-                    if (data.has("imageUrl")) {
-                        payload.putString("imageUrl", data.optString("imageUrl"));
-                    }
-                    if (data.has("price")) {
-                        // price could be number or string — adapt as needed
-                        payload.putString("price", data.optString("price"));
-                    }
-                    if (data.has("description")) {
-                        payload.putString("description", data.optString("description"));
-                    }
-                    Log.d("MCP", "Campaign data: " + payload);
-                    sendEvent(reactContext, "FeaturedProductCampaign", payload);
 
+                    Iterator<String> keys = data.keys();
+                    while (keys.hasNext()) {
+                        String key = keys.next();
+                        payload.putString(key, data.optString(key));
+                    }
+
+                    event.putMap("payload", payload);
+
+                    Log.d("MCP", "Campaign received: " + campaign.getCampaignName());
+                    Log.d("MCP", "Campaign payload: " + data.toString());
+
+                    sendEvent(
+                            reactContext,
+                            "MCP_Campaign",
+                            event);
                 } catch (Exception e) {
                     Log.e("MCP", "Error parsing mobile data campaign", e);
                 }
             }
-        }, "Featured Product");
+        };
+        screen.setCampaignHandler(handler, campaignName);
     }
 
     @ReactMethod

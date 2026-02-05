@@ -11,7 +11,7 @@ import {
 import { NativeModules, NativeEventEmitter } from 'react-native';
 import { useCart } from '../components/context/CartContext';
 import { FeaturedBanner } from '../components/FeaturedBanner';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { Double } from 'react-native/Libraries/Types/CodegenTypes';
@@ -62,24 +62,30 @@ export default function ProductsScreen() {
 
   const navigation = useNavigation<NavProp>();
 
-  useEffect(() => {
-    PersonalizationModule.trackPageView('Products');
-    PersonalizationModule.registerCampaignHandler();
-
-    const emitter = new NativeEventEmitter(PersonalizationModule);
-    const listener = emitter.addListener('FeaturedProductCampaign', data => {
-      setFeaturedProduct({
-        id: data.productId,
-        name: data.name,
-        price: data.price,
-        imageUrl: data.imageUrl,
-        description: data.description,
+  useFocusEffect(
+    React.useCallback(() => {
+      setShowPopup(true);
+      PersonalizationModule.trackPageView('Products');
+      PersonalizationModule.registerCampaignHandler('Featured Product');
+      const emitter = new NativeEventEmitter(PersonalizationModule);
+      const listener = emitter.addListener('MCP_Campaign', event => {
+        console.log('[EVENT] Featured Product received:', event);
+        if (event.campaignName === 'Featured Product') {
+          setFeaturedProduct({
+            id: event.payload.productId,
+            name: event.payload.name,
+            price: event.payload.price,
+            imageUrl: event.payload.imageUrl,
+            description: event.payload.description,
+          });
+        } else {
+          return;
+        }
       });
-    });
 
-    return () => listener.remove();
-  }, []);
-
+      return () => listener.remove();
+    }, []),
+  );
   const handleAddToCart = (product: any) => {
     addToCart(product);
 
