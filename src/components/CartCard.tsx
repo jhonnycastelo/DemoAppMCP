@@ -2,7 +2,21 @@ import { StyleSheet, Text, View, Image } from 'react-native';
 import React from 'react';
 import MaterialDesignIcons from '@react-native-vector-icons/material-design-icons';
 
-const CartCard = (item: any) => {
+interface CartItem {
+  id: string;
+  imageUrl?: string;
+  quantity: number;
+  name: string;
+  category?: string;
+  price: number;
+}
+
+interface CartCardProps {
+  item: CartItem;
+  onDelete: (productId: string) => void;
+}
+
+const CartCard = ({ item, onDelete }: CartCardProps) => {
   console.log('CartCard item:', item);
   return (
     <View style={styles.card}>
@@ -28,7 +42,7 @@ const CartCard = (item: any) => {
         size={24}
         color="red"
         style={styles.deleteIcon}
-        onPress={() => console.log('Delete item:', item)}
+        onPress={() => onDelete(item.id)}
       />
     </View>
   );

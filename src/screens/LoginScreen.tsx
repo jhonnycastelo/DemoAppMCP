@@ -1,8 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  NativeModules,
+  Image,
+  Touchable,
+  TouchableOpacity,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../client';
 import axios from 'axios';
+
+const { PersonalizationModule } = NativeModules;
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -19,7 +32,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       });
 
       await AsyncStorage.setItem('token', res.data.token);
-      Alert.alert('Success', 'Logged in!');
+      PersonalizationModule.setUserId(res.data.userId);
+      PersonalizationModule.setUserAttribute('email', email); // 👈 set email as user attribute
       onLoginSuccess();
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -32,30 +46,100 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
   return (
     <View style={styles.container}>
-      <Text>Email</Text>
-      <TextInput
-        style={styles.input}
-        autoCapitalize="none"
-        onChangeText={setEmail}
+      <Image
+        source={require('../../assets/price-shoes-logo-png_seeklogo-169459.png')} // adjust path
+        style={styles.logo}
+        resizeMode="contain"
       />
 
-      <Text>Password</Text>
-      <TextInput
-        style={styles.input}
-        secureTextEntry
-        onChangeText={setPassword}
-      />
+      <View style={styles.form}>
+        <Text style={styles.label}>Email</Text>
+        <TextInput
+          style={styles.input}
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
 
-      <Button title="Login" onPress={login} />
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          style={styles.input}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.loginButton} onPress={login}>
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.signupRow}>
+          <Text style={styles.signupText}>Don't have an account?</Text>
+
+          <TouchableOpacity onPress={() => {}}>
+            <Text style={styles.signupLink}>Sign Up Here</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: {
+    flex: 1,
+    justifyContent: 'center', // vertical center
+    alignItems: 'center', // horizontal center
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  logo: {
+    width: 150,
+    height: 150,
+    marginBottom: 30,
+  },
+  form: {
+    width: '100%',
+    maxWidth: 350,
+  },
+  label: {
+    marginBottom: 6,
+    fontWeight: '600',
+  },
   input: {
     borderWidth: 1,
-    marginBottom: 12,
-    padding: 8,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    marginTop: 10,
+  },
+  signupRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  signupText: {
+    color: '#666',
+    marginRight: 6,
+  },
+  signupLink: {
+    color: '#007BFF',
+    fontWeight: '600',
+  },
+  loginButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 12,
+    borderRadius: 8, // 👈 rounded corners
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });

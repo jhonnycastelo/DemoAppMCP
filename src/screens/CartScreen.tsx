@@ -8,7 +8,7 @@ import { NativeModules } from 'react-native';
 const { PersonalizationModule } = NativeModules;
 
 const CartScreen = () => {
-  const { cart, totalPrice } = useCart();
+  const { cart, totalPrice, deleteItemFromCart } = useCart();
   useEffect(() => {
     PersonalizationModule.trackPageView('Cart');
     console.log('[VIEW CART]', cart);
@@ -24,7 +24,9 @@ const CartScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={cart}
-        renderItem={({ item }) => CartCard(item)}
+        renderItem={({ item }) => (
+          <CartCard item={item} onDelete={deleteItemFromCart} />
+        )}
       ></FlatList>
       <View style={styles.pricingContainer}>
         <Text style={styles.totalText}>Total: </Text>

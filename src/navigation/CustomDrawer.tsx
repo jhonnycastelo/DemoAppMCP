@@ -25,9 +25,9 @@ export default function CustomDrawer(props: any) {
       <DrawerItem
         label="Home"
         onPress={() => {
-          navigation.navigate('Home', {
-            screen: 'Home',
-            params: { screen: 'Home' },
+          navigation.navigate('Root', {
+            screen: 'Tabs',
+            params: { screen: 'HomeTab' },
           });
           navigation.closeDrawer();
         }}
@@ -36,9 +36,9 @@ export default function CustomDrawer(props: any) {
       <DrawerItem
         label="Products"
         onPress={() => {
-          navigation.navigate('Home', {
-            screen: 'Home',
-            params: { screen: 'Products' },
+          navigation.navigate('Root', {
+            screen: 'Tabs',
+            params: { screen: 'ProductsTab' },
           });
           navigation.closeDrawer();
         }}

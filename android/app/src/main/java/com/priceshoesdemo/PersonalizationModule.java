@@ -27,11 +27,12 @@ import java.util.List;
 import java.util.UUID;
 import com.facebook.react.bridge.ReadableArray;
 import java.util.Iterator;
+import java.util.HashMap;
 
 public class PersonalizationModule extends ReactContextBaseJavaModule {
 
     private final ReactApplicationContext reactContext;
-    private Campaign currentCampaign;
+    private static final HashMap<String, Campaign> activeCampaigns = new HashMap<>();
 
     private void sendEvent(ReactContext reactContext,
             String eventName,
@@ -64,25 +65,74 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void registerCampaignHandler(String campaignName) {
-        Activity activity = getCurrentActivity();
+    /*
+     * public void registerCampaignHandler(String campaignTarget) {
+     * Activity activity = getCurrentActivity();
+     * 
+     * if (activity != null) {
+     * Log.e("MCP", "[MCP] Activity is" + activity);
+     * }
+     * 
+     * Context screen = Evergage.getInstance().getGlobalContext();
+     * CampaignHandler handler = new CampaignHandler() {
+     * 
+     * @Override
+     * public void handleCampaign(Campaign campaign) {
+     * try {
+     * WritableMap event = Arguments.createMap();
+     * 
+     * // 1️⃣ Campaign metadata
+     * if (!activeCampaigns.containsKey(campaign.getCampaignId())) {
+     * Log.d("MCP", "Campaign received: " + campaign.getCampaignName());
+     * event.putString("campaignName", campaign.getCampaignName());
+     * event.putString("campaignId", campaign.getCampaignId());
+     * activeCampaigns.put(campaign.getCampaignId(), campaign);
+     * }
+     * 
+     * // 2️⃣ Campaign payload (dynamic)
+     * JSONObject data = campaign.getData();
+     * WritableMap payload = Arguments.createMap();
+     * 
+     * Iterator<String> keys = data.keys();
+     * while (keys.hasNext()) {
+     * String key = keys.next();
+     * payload.putString(key, data.optString(key));
+     * }
+     * 
+     * event.putMap("payload", payload);
+     * 
+     * Log.d("MCP", "Campaign received: " + campaign.getCampaignName());
+     * Log.d("MCP", "Campaign payload: " + data.toString());
+     * 
+     * sendEvent(
+     * reactContext,
+     * "MCP_Campaign",
+     * event);
+     * } catch (Exception e) {
+     * Log.e("MCP", "Error parsing mobile data campaign", e);
+     * }
+     * }
+     * };
+     * screen.setCampaignHandler(handler, campaignTarget);
+     * }
+     */
+    @ReactMethod
+    public void registerCampaignHandlers(ReadableArray targets) {
 
-        if (activity != null) {
-            Log.e("MCP", "[MCP] Activity is" + activity);
-        }
+        Context context = Evergage.getInstance().getGlobalContext();
 
-        Context screen = Evergage.getInstance().getGlobalContext();
-        CampaignHandler handler = new CampaignHandler() {
-            @Override
-            public void handleCampaign(Campaign campaign) {
-                try {
+        for (int i = 0; i < targets.size(); i++) {
+            String target = targets.getString(i);
+
+            context.setCampaignHandler(new CampaignHandler() {
+                @Override
+                public void handleCampaign(Campaign campaign) {
+
                     WritableMap event = Arguments.createMap();
-
-                    // 1️⃣ Campaign metadata
-                    event.putString("campaignName", campaign.getCampaignName());
                     event.putString("campaignId", campaign.getCampaignId());
+                    event.putString("campaignName", campaign.getCampaignName());
+                    event.putString("target", campaign.getTarget());
 
-                    // 2️⃣ Campaign payload (dynamic)
                     JSONObject data = campaign.getData();
                     WritableMap payload = Arguments.createMap();
 
@@ -94,19 +144,10 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
 
                     event.putMap("payload", payload);
 
-                    Log.d("MCP", "Campaign received: " + campaign.getCampaignName());
-                    Log.d("MCP", "Campaign payload: " + data.toString());
-
-                    sendEvent(
-                            reactContext,
-                            "MCP_Campaign",
-                            event);
-                } catch (Exception e) {
-                    Log.e("MCP", "Error parsing mobile data campaign", e);
+                    sendEvent(reactContext, "MCP_Campaign", event);
                 }
-            }
-        };
-        screen.setCampaignHandler(handler, campaignName);
+            }, target);
+        }
     }
 
     @ReactMethod
@@ -216,7 +257,7 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
 
             Context ctx = Evergage.getInstance().getGlobalContext();
             if (ctx != null) {
-                Log.e("Evergage-Cart-Payload", json.toString());
+                // lineItem.setPrice(price);
                 ctx.addToCart(lineItem);
             }
         } catch (Exception ignored) {
@@ -250,21 +291,13 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
             // Build final JSON
             JSONObject json = new JSONObject();
             json.put("id", productId);
-            json.put("name", name);
-            json.put("price", String.valueOf(price)); // price as string
-            json.put("properties", properties);
+            json.put("attributes", properties);
 
             // Log JSON
             Log.e("Evergage-Item-Payload-JSON", json.toString());
 
             // Parse item
             Product product = Product.fromJSONObject(json, productId);
-
-            if (product != null) {
-                Log.e("Evergage-Item-Payload-ITEM", product.toString());
-            } else {
-                Log.e("Evergage-Item-Payload-ITEM", "Item is null");
-            }
 
             // Send to Evergage
             Context ctx = Evergage.getInstance().getGlobalContext();
@@ -281,19 +314,47 @@ public class PersonalizationModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void trackFeaturedProductClick(String productId) {
-        if (currentCampaign != null) {
-            Context screen = Evergage.getInstance().getGlobalContext();
-            screen.trackClickthrough(currentCampaign);
+    public void trackClickthrough(String campaignId) {
+        Campaign campaign = activeCampaigns.get(campaignId);
+        if (campaign == null) {
+            Log.e("MCP", "No active campaign found with ID: " + campaignId);
+            return;
         }
+        Context screen = Evergage.getInstance().getGlobalContext();
+        screen.trackClickthrough(campaign);
     }
 
     @ReactMethod
-    public void trackFeaturedProductDismiss(String productId) {
-        if (currentCampaign != null) {
-            Log.e("Featured Product Dismiss", currentCampaign.getCampaignName());
-            Context screen = Evergage.getInstance().getGlobalContext();
-            screen.trackDismissal(currentCampaign);
+    public void trackDismissal(String campaignId) {
+        Campaign campaign = activeCampaigns.get(campaignId);
+        if (campaign == null) {
+            Log.e("MCP", "No active campaign found with ID: " + campaignId);
+            return;
         }
+        Context screen = Evergage.getInstance().getGlobalContext();
+        screen.trackDismissal(campaign);
+    }
+
+    @ReactMethod
+    public void trackImpression(String campaignId) {
+        Campaign campaign = activeCampaigns.get(campaignId);
+        if (campaign == null) {
+            Log.e("MCP", "No active campaign found with ID: " + campaignId);
+            return;
+        }
+        Context screen = Evergage.getInstance().getGlobalContext();
+        screen.trackImpression(campaign);
+    }
+
+    @ReactMethod
+    public void setUserId(String userId) {
+        Evergage evergage = Evergage.getInstance();
+        evergage.setUserId(userId);
+    }
+
+    @ReactMethod
+    public void setUserAttribute(String key, String value) {
+        Evergage evergage = Evergage.getInstance();
+        evergage.setUserAttribute(key, value);
     }
 }

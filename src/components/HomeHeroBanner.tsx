@@ -24,6 +24,7 @@ interface HomeHeroBanner {
   ctaUrl?: string;
   imageUrl?: string;
   onPressCta?: (url?: string) => void;
+  campaignId?: string; // 👈 Optional campaignId for tracking
 }
 
 interface HomeHeroBannerProps {

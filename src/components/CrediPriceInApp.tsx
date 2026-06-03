@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  Linking,
 } from 'react-native';
 import { NativeModules } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -16,46 +17,41 @@ import { navigate } from '../navigation/NavigationService';
 
 const { PersonalizationModule } = NativeModules;
 
-interface FeaturedProduct {
-  id: string;
-  name: string;
-  imageUrl: string;
-  price?: number;
-  description: string;
+interface CrediPriceInAppInformation {
+  ctaURL: string;
+  imageURL: string;
   campaignId?: string; // 👈 Optional campaignId for tracking
 }
 
-interface FeaturedBannerProps {
-  product: FeaturedProduct | null;
+interface CrediPriceInAppProps {
+  InApp: CrediPriceInAppInformation | null;
   visible: boolean;
   onClose: () => void;
 }
 
-type NavProp = NativeStackNavigationProp<RootStackParamList, 'ProductDetail'>;
-
-const navigation = useNavigation<NavProp>();
-export const FeaturedBanner: React.FC<FeaturedBannerProps> = ({
-  product,
+export const CrediPriceInApp: React.FC<CrediPriceInAppProps> = ({
+  InApp,
   visible,
   onClose,
 }) => {
   // 🔐 Guard FIRST
-  if (!visible || !product) {
+  if (!visible || !InApp) {
     return null;
   }
-  const { id, name, imageUrl, price, description } = product;
+  const { campaignId, ctaURL, imageURL } = InApp;
 
   const handlePress = () => {
-    PersonalizationModule.trackClickthrough(product.campaignId);
-    console.log('User clicked:', name);
+    PersonalizationModule.trackClickthrough(campaignId);
+    console.log('User clicked InApp with URL:', ctaURL);
+    console.log('User clicked InApp with imageURL:', imageURL);
+    Linking.openURL(ctaURL).catch(err =>
+      console.error('Failed to open URL:', err),
+    );
     onClose();
-    navigation.navigate('ProductDetail', {
-      product,
-    });
   };
 
   const handleDismiss = () => {
-    PersonalizationModule.trackDismissal('Featured Product');
+    PersonalizationModule.trackDismissal(campaignId);
     onClose();
   };
 
@@ -74,15 +70,8 @@ export const FeaturedBanner: React.FC<FeaturedBannerProps> = ({
           <TouchableOpacity style={styles.closeButton} onPress={handleDismiss}>
             <Text style={styles.closeText}>✕</Text>
           </TouchableOpacity>
-
-          <Image source={{ uri: imageUrl }} style={styles.image} />
-
-          <Text style={styles.title}>{name}</Text>
-          {price !== undefined && <Text style={styles.price}>${price}</Text>}
-          <Text style={styles.description}>{description}</Text>
-
-          <TouchableOpacity style={styles.primaryButton} onPress={handlePress}>
-            <Text style={styles.primaryButtonText}>View Product</Text>
+          <TouchableOpacity onPress={handlePress}>
+            <Image source={{ uri: imageURL }} style={styles.image} />
           </TouchableOpacity>
         </Pressable>
       </Pressable>
@@ -100,11 +89,10 @@ const styles = StyleSheet.create({
   },
   popup: {
     width: '100%',
-    maxWidth: 360,
-    backgroundColor: '#fff',
+    maxWidth: 'auto',
+    height: 'auto',
     borderRadius: 16,
     padding: 16,
-    elevation: 6,
   },
   closeButton: {
     position: 'absolute',
@@ -113,14 +101,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   closeText: {
-    fontSize: 18,
-    color: '#666',
+    fontSize: 26,
+    color: '#ffffff',
+    position: 'absolute',
+    top: 15,
+    right: 20,
   },
   image: {
     width: '100%',
-    height: 160,
-    borderRadius: 12,
-    marginBottom: 12,
+    aspectRatio: 9 / 16, // adjust to your campaign image ratio
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 18,

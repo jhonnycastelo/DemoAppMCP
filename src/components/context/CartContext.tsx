@@ -12,6 +12,7 @@ interface CartContextValue {
   cart: CartItem[];
   addToCart: (product: any) => void;
   totalPrice: number;
+  deleteItemFromCart: (productId: string) => void;
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
@@ -44,6 +45,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     const updatedCart = [...cart, { ...product, quantity: 1 }];
     await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
     setCart(updatedCart);
+    totalSum(updatedCart);
     return;
   };
 
@@ -62,9 +64,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
       totalSum(storedCart ? JSON.parse(storedCart) : []);
     }
   };
+  const deleteItemFromCart = async (productId: string) => {
+    const updatedCart = cart.filter(item => item.id !== productId);
+    await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
+    setCart(updatedCart);
+    totalSum(updatedCart);
+  };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, totalPrice }}>
+    <CartContext.Provider
+      value={{ cart, addToCart, totalPrice, deleteItemFromCart }}
+    >
       {children}
     </CartContext.Provider>
   );

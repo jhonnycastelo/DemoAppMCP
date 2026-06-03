@@ -1,5 +1,5 @@
 // navigation/AppNavigator.tsx
-import React, { use, useContext } from 'react';
+import React, { use, useContext, useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
@@ -11,6 +11,9 @@ import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import CartScreen from '../screens/CartScreen';
 import { useCart } from '../components/context/CartContext';
+import { LoginScreen } from '../screens/LoginScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -101,5 +104,41 @@ function MainDrawer() {
 }
 // Stack for app navigation including detail screens
 export default function AppNavigator() {
-  return <MainDrawer></MainDrawer>;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await AsyncStorage.getItem('token');
+
+      if (!token) {
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
+      }
+      const decoded = jwtDecode(token) as { exp: number } | null;
+      if (!decoded || decoded.exp * 1000 < Date.now()) {
+        await AsyncStorage.removeItem('token');
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
+      } else {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // 👇 Safe: after ALL hooks are declared
+  if (isLoading) {
+    return null; // or loading spinner
+  }
+
+  return isAuthenticated ? (
+    <MainDrawer />
+  ) : (
+    <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />
+  );
 }

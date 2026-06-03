@@ -15,8 +15,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { Double } from 'react-native/Libraries/Types/CodegenTypes';
-
-const { PersonalizationModule } = NativeModules;
+import { CrediPriceInApp } from '../components/CrediPriceInApp';
 
 const PRODUCTS = [
   {
@@ -45,18 +44,17 @@ const PRODUCTS = [
   },
 ];
 
-interface FeaturedProduct {
-  id: string;
-  name: string;
-  imageUrl: string;
-  price?: Double;
-  description: string;
+interface CrediPriceInApp {
+  ctaURL: string;
+  imageURL: string;
+  campaignId?: string; // 👈 Optional campaignId for tracking
 }
+const { PersonalizationModule } = NativeModules;
 
 export default function ProductsScreen() {
   const { addToCart } = useCart();
-  const [featuredProduct, setFeaturedProduct] =
-    useState<FeaturedProduct | null>(null);
+  const [crediPriceInApp, setCrediPriceInApp] =
+    useState<CrediPriceInApp | null>(null);
   const [showPopup, setShowPopup] = useState(true);
   type NavProp = NativeStackNavigationProp<RootStackParamList, 'ProductDetail'>;
 
@@ -66,18 +64,17 @@ export default function ProductsScreen() {
     React.useCallback(() => {
       setShowPopup(true);
       PersonalizationModule.trackPageView('Products');
-      PersonalizationModule.registerCampaignHandler('Featured Product');
+      //PersonalizationModule.registerCampaignHandler('CrediPrice');
       const emitter = new NativeEventEmitter(PersonalizationModule);
       const listener = emitter.addListener('MCP_Campaign', event => {
-        console.log('[EVENT] Featured Product received:', event);
-        if (event.campaignName === 'Featured Product') {
-          setFeaturedProduct({
-            id: event.payload.productId,
-            name: event.payload.name,
-            price: event.payload.price,
-            imageUrl: event.payload.imageUrl,
-            description: event.payload.description,
+        console.log('[EVENT] CrediPrice In App received:', event);
+        if (event.campaignName === 'CrediPrice Campaign') {
+          setCrediPriceInApp({
+            ctaURL: event.payload.ctaURL,
+            imageURL: event.payload.imageURL,
+            campaignId: event.campaignId, // Pass campaignId for tracking
           });
+          PersonalizationModule.trackImpression(event.campaignId); // Track impression when campaign is received
         } else {
           return;
         }
@@ -89,17 +86,8 @@ export default function ProductsScreen() {
   const handleAddToCart = (product: any) => {
     addToCart(product);
 
-    const payload = {
-      productId: product.id,
-      name: product.name,
-      category: product.category,
-      price: product.price,
-      quantity: 1,
-      currency: 'USD',
-    };
-
-    PersonalizationModule.addToCart(payload);
-    console.log('[DEBUG] Sent AddToCart to SDK:', payload);
+    PersonalizationModule.addToCart(product.Id);
+    console.log('[DEBUG] Sent AddToCart to SDK:', product.Id);
   };
 
   const onPress = (product: any) => {
@@ -108,9 +96,9 @@ export default function ProductsScreen() {
   };
   return (
     <View style={styles.screen}>
-      <FeaturedBanner
-        product={featuredProduct}
-        visible={!!featuredProduct && showPopup}
+      <CrediPriceInApp
+        InApp={crediPriceInApp}
+        visible={!!crediPriceInApp && showPopup}
         onClose={() => setShowPopup(false)}
       />
 

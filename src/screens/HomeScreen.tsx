@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, NativeEventEmitter } from 'react-native';
 import { NativeModules } from 'react-native';
 import { HomeHeroBanner } from '../components/HomeHeroBanner';
 import { useFocusEffect } from '@react-navigation/native';
+import database from '@react-native-firebase/database';
 
 const { PersonalizationModule } = NativeModules;
 
@@ -13,6 +14,7 @@ interface HomeHeroBanner {
   ctaUrl?: string;
   imageUrl?: string;
   onPressCta?: (url?: string) => void;
+  campaignId?: string; // 👈 Optional campaignId for tracking
 }
 
 export default function HomeScreen() {
@@ -22,19 +24,18 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       PersonalizationModule.trackPageView('Home');
-      PersonalizationModule.registerCampaignHandler('Home Hero Banner');
+      //PersonalizationModule.registerCampaignHandler('Home Hero Banner');
       const emitter = new NativeEventEmitter(PersonalizationModule);
       const listener = emitter.addListener('MCP_Campaign', event => {
         console.log('[EVENT] Home Hero Banner received:', event);
         // Handle the event as needed
         if (event.campaignName === 'Home Hero Banner') {
+          PersonalizationModule.trackImpression(event.campaignId);
           // You can set state here to update the HomeHeroBanner props
           setHomeHeroBanner({
-            headline: event.payload.headline,
-            subheadline: event.payload.subheadline,
-            ctaText: event.payload.ctaText,
             ctaUrl: event.payload.ctaUrl,
             imageUrl: event.payload.imageUrl,
+            campaignId: event.campaignId, // Pass campaignId for tracking
           });
         } else {
           return;
