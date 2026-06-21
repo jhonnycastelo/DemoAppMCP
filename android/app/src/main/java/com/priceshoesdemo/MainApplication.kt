@@ -26,7 +26,6 @@ class MainApplication : Application(), ReactApplication {
           // 👉 Aquí SE AGREGA el paquete manualmente 👇
           // -------------------------------------------
           add(PersonalizationPackage())
-
           // (Este bloque puede tener otros packages también)
         },
     )
@@ -37,6 +36,11 @@ class MainApplication : Application(), ReactApplication {
 
     // 🔹 Inicializar Marketing Cloud Personalization (Evergage)
     Evergage.initialize(this)
+    val evergage = Evergage.getInstance();
+
+    // Recommended to set the authenticated user's ID as soon as known: 
+
+    //evergage.setUserId("123456"); 
 
     val config = ClientConfiguration.Builder()
       .account("partnerfreewaymx")
@@ -47,5 +51,8 @@ class MainApplication : Application(), ReactApplication {
 
     // 🔹 Inicializar React Native (como ya estaba)
     loadReactNative(this)
+
+    
   }
+  
 }
